@@ -31,7 +31,7 @@ require_once 'phing/tasks/ext/git/GitBaseTask.php';
  * @since
  * @author    Michael Gatto <mgatto@lisantra.com>
  * @license   http://www.opensource.org/licenses/mit-license.html  MIT License
- * @see VersionControl_Git
+ * @see       VersionControl_Git
  */
 class GitArchiveTask extends GitBaseTask
 {
@@ -98,36 +98,36 @@ class GitArchiveTask extends GitBaseTask
         $command = $client->getCommand('archive');
 
         /* set options */
-        $command->setOption('format', $this->getFormat())
-                ->setOption('output', $this->getOutputDestination())
-                ->setOption('prefix', $this->getPrefix())
-                ->setOption('path', $this->getSpecificPaths());
+        $command
+            ->setOption('format', $this->getFormat())
+            ->setOption('output', $this->getOutput())
+            ->setOption('prefix', $this->getPrefix())
+            ->setOption('path', $this->getPath());
 
         /* what to archive; its an argument to git archive */
         $command->addArgument($this->getRevision());
-        //$command->addArgument($this->getBranchname());
 
-        if (null !== $this->getStartPoint()) {
-            $command->addArgument($this->getStartPoint());
-        }
-
-        $this
-                ->log(
-                        'git-archive command: '
-                                . $command->createCommandString(),
-                        Project::MSG_INFO);
+        $this->log(
+            sprintf('git-archive command: %s', $command->createCommandString()),
+            Project::MSG_INFO
+        );
 
         try {
             $output = $command->execute();
+
         } catch (Exception $e) {
             throw new BuildException('Task execution failed.');
         }
 
-        $this
-                ->log(
-                        sprintf('git-archive: archive "%s" repository',
-                                $this->getRepository()), Project::MSG_INFO);
-        $this->log('git-archive output: ' . trim($output), Project::MSG_INFO);
+        /* the command apparently succeeded */
+        $this->log(
+            sprintf('git-archive: archive "%s" repository', $this->getRepository()),
+            Project::MSG_INFO
+        );
+        $this->log(
+            sprintf('git-archive output: %s', trim($output)),
+            Project::MSG_INFO
+        );
     }
 
     /**
@@ -157,8 +157,11 @@ class GitArchiveTask extends GitBaseTask
         $permitted_formats = array('gz', 'tar', 'tar.gz', 'tgz');
         if (!in_array($format, $permitted_formats)) {
             throw new BuildException(
-                    sprintf("Archive format '%s' must be one of %s", $format,
-                            join(', ', $permitted_formats)));
+                sprintf("Archive format '%s' must be one of %s",
+                        $format,
+                        join(', ', $permitted_formats)
+                )
+            );
         }
 
         $this->format = $format;

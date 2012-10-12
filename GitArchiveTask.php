@@ -1,6 +1,6 @@
 <?php
+
 /*
- *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -28,43 +28,53 @@ require_once 'phing/tasks/ext/git/GitBaseTask.php';
  *
  * @version   $Revision$
  * @package   phing.tasks.ext
- * @since     
+ * @since
  * @author    Michael Gatto <mgatto@lisantra.com>
  * @license   http://www.opensource.org/licenses/mit-license.html  MIT License
  * @see VersionControl_Git
  */
-class GitArchiveTask extends Task
+class GitArchiveTask extends GitBaseTask
 {
     /**
-     * @var 
+     * Which revision at which to generate the archive
+     *
+     * @var string
      */
-    protected $tag = null;
-    
+    protected $revision = 'HEAD';
+
     /**
-     * @var 
+     * Where to save the generated archive
+     *
+     * Defaults to current working directory
+     *
+     * @var string
      */
-    protected $output = null;
-    
+    protected $output = '.';
+
     /**
-     * @var 
+     * The directory to prepend paths in the archive
+     *
+     *  Defaults to none
+     *
+     * @var string
      */
     protected $prefix = null;
-    
+
     /**
-     * restrict archive to this path only
-     * @var 
+     * restrict archive to these paths only
+     *
+     * @var mixed
      */
-    protected $path = null;
-    
+    protected $path = array();
+
     /**
-     * @var 
+     * The archive format
+     *
+     * Defaults to tar.gz; compeltely arbituary choice
+     *
+     * @var string
      */
     protected $format = 'tar.gz';
-    
-    /**
-     * @var 
-     */
-    protected $tagOrBranchOrCommitToArchive = null;
 
     /**
      * Phing's main method.
@@ -73,30 +83,39 @@ class GitArchiveTask extends Task
      */
     public function main()
     {
-        /** Validation */
-        /* Required; from GitBaseTask */
+        /** Validation
+         *
+         * Most options have defaults built into this class's properties, thus
+         * no need to validate them explicitly.
+         */
+        /* inherited from GitBaseTask */
         if (null === $this->getRepository()) {
             throw new BuildException('"repository" is required parameter');
         }
-        
+
+        /* Get the archive command setup from VersionControl_Git */
         $client = $this->getGitClient(false, $this->getRepository());
         $command = $client->getCommand('archive');
-                
-        $command
-            ->setOption('format', $this->isNoTrack())
-            ->setOption('output', $this->isQuiet())
-            ->setOption('prefix', $this->isCreate())
-            ->setOption('path', $this->isForceCreate())
-            ->setOption('tag', $this->isMerge());
-  
 
-        $command->addArgument($this->getBranchname());
+        /* set options */
+        $command->setOption('format', $this->getFormat())
+                ->setOption('output', $this->getOutputDestination())
+                ->setOption('prefix', $this->getPrefix())
+                ->setOption('path', $this->getSpecificPaths());
+
+        /* what to archive; its an argument to git archive */
+        $command->addArgument($this->getRevision());
+        //$command->addArgument($this->getBranchname());
 
         if (null !== $this->getStartPoint()) {
             $command->addArgument($this->getStartPoint());
         }
 
-        $this->log('git-archive command: ' . $command->createCommandString(), Project::MSG_INFO);
+        $this
+                ->log(
+                        'git-archive command: '
+                                . $command->createCommandString(),
+                        Project::MSG_INFO);
 
         try {
             $output = $command->execute();
@@ -104,20 +123,109 @@ class GitArchiveTask extends Task
             throw new BuildException('Task execution failed.');
         }
 
-        $this->log(
-            sprintf('git-archive: archive "%s" repository', $this->getRepository()), 
-            Project::MSG_INFO); 
+        $this
+                ->log(
+                        sprintf('git-archive: archive "%s" repository',
+                                $this->getRepository()), Project::MSG_INFO);
         $this->log('git-archive output: ' . trim($output), Project::MSG_INFO);
     }
-    
-    public function isFormat() {
+
+    /**
+     * @return string
+     */
+    public function isFormat()
+    {
         return $this->getFormat();
     }
-    public function getFormat() {
+
+    /**
+     * @return string
+     */
+    public function getFormat()
+    {
         return $this->format;
     }
-    public function setFormat($format) {
+
+    /**
+     * @param string $format
+     * @return void
+     * @throws BuildException
+     */
+    public function setFormat($format)
+    {
+        /** Validate formats */
+        $permitted_formats = array('gz', 'tar', 'tar.gz', 'tgz');
+        if (!in_array($format, $permitted_formats)) {
+            throw new BuildException(
+                    sprintf("Archive format '%s' must be one of %s", $format,
+                            join(', ', $permitted_formats)));
+        }
+
         $this->format = $format;
     }
-    
+
+    /**
+     * @return string
+     */
+    protected function getRevision()
+    {
+        return $this->revision;
+    }
+
+    /**
+     * @param $revision
+     */
+    protected function setRevision($revision)
+    {
+        $this->revision = $revision;
+    }
+
+    /**
+     * @return string
+     */
+    protected function getOutput()
+    {
+        return $this->output;
+    }
+
+    /**
+     * @param $output
+     */
+    protected function setOutput($output)
+    {
+        $this->output = $output;
+    }
+
+    /**
+     * @return string
+     */
+    protected function getPrefix()
+    {
+        return $this->prefix;
+    }
+
+    /**
+     * @param $prefix
+     */
+    protected function setPrefix($prefix)
+    {
+        $this->prefix = $prefix;
+    }
+
+    /**
+     * @return mixed
+     */
+    protected function getPath()
+    {
+        return $this->path;
+    }
+
+    /**
+     * @param $path
+     */
+    protected function setPath($path)
+    {
+        $this->path = $path;
+    }
+
 }

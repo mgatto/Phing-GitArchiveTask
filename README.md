@@ -19,7 +19,8 @@ Synopsis
 Why
 ---
 
-It could be better than <pre>git checkout</pre> since we
+It could be better than `git checkout` since we will get a pristine
+archive of the sources, without the `.git` directory, or other git-specific files.
 
 Don't foget to have a decent .gitattributes file in your project, too.
 Having one will help keep .gitignore and kindred files from polluting your

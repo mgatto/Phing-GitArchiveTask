@@ -16,6 +16,22 @@ Synopsis
     path="" />
 ```
 
+Why
+---
+
+It could be better than <pre>git checkout</pre> since we
+
+Don't foget to have a decent .gitattributes file in your project, too.
+Having one will help keep .gitignore and kindred files from polluting your
+actual project.
+
+Example .gitattributes file:
+
+```
+.gitattributes export-ignore
+.gitignore export-ignore
+```
+
 Defaults
 --------
 
